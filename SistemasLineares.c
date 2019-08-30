@@ -19,6 +19,10 @@ real_t normaL2Residuo(SistLinear_t *SL, real_t *x)
 
 SistLinear_t *copiarSL (SistLinear_t *SL) {
   prnSistLinear(SL);
+  printf("Agota vamos copiar\n");
+
+  SistLinear_t *CP = alocaSistLinear(5);
+
 }
 
 /*!

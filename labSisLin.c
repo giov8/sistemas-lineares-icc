@@ -12,7 +12,7 @@ int main ()
     
   SistLinear_t *SL = alocaSistLinear(5);
   inicializaSistLinear (SL, 0, 12);
-  prnSistLinear (SL);
+  //prnSistLinear (SL);
 
   real_t *x = malloc(SL->n * sizeof(double));
 

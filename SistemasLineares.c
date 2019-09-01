@@ -17,14 +17,6 @@ real_t normaL2Residuo(SistLinear_t *SL, real_t *x)
 }
 
 
-SistLinear_t *copiarSL (SistLinear_t *SL) {
-  prnSistLinear(SL);
-  printf("Agota vamos copiar\n");
-
-  SistLinear_t *CP = alocaSistLinear(5);
-
-}
-
 /*!
   \brief Método da Eliminação de Gauss
 
@@ -36,22 +28,8 @@ SistLinear_t *copiarSL (SistLinear_t *SL) {
 */
 int eliminacaoGauss (SistLinear_t *SL, real_t *x, int pivotamento)
 {
-  copiarSL(SL);
 
-  // pivoteamento
- /* if (pivoteamento) {
-    for (int i = 0; i < SL->n; ++i) {
-      uint iPivo = encontraMAX(SL, i);
-      if (i != iPivo) trocaLinha(SL, x, i, iPivo);
-    }
- }
-/*
-  // triangularização (eliminação de gauss)
-  for (int k = i+1; k < SL->n; ++k) {
-    // que m é esse porra
-    double m = SL->A[k*SL->n+i];
-  }
-*/
+
 }
 
 /*!
@@ -195,10 +173,10 @@ SistLinear_t *lerSistLinear ()
   
   for(int i=0; i < n; ++i)
     for(int j=0; j < n; ++j)
-      scanf ("%lg", &SL->A[i*n+j]);
+      scanf ("%g", &SL->A[i*n+j]);
 
   for(int i=0; i < n; ++i)
-    scanf ("%lg", &SL->b[i]);
+    scanf ("%g", &SL->b[i]);
   
   return SL;
 }
@@ -209,10 +187,10 @@ void prnSistLinear (SistLinear_t *SL)
   int n=SL->n;
 
   for(int i=0; i < n; ++i) {
-    printf("\n\t");
+    printf("\n");
     for(int j=0; j < n; ++j)
-      printf ("%10.5lg", SL->A[i*n+j]);
-    printf ("   |   %.8lg", SL->b[i]);
+      printf ("%10g", SL->A[i*n+j]);
+    printf ("   |   %g", SL->b[i]);
   }
   printf("\n\n");
 }
@@ -223,7 +201,7 @@ void prnVetor (real_t *v, unsigned int n)
 
   printf ("\n");
   for(i=0; i < n; ++i)
-      printf ("%10.10lg ", v[i]);
+      printf ("%10g ", v[i]);
   printf ("\n\n");
 
 }

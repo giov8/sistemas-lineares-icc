@@ -12,10 +12,13 @@ int main ()
     
   SistLinear_t *SL = alocaSistLinear(5);
   inicializaSistLinear (SL, 0, 12);
-  //prnSistLinear (SL);
+  prnSistLinear (SL);
 
-  real_t *x = malloc(SL->n * sizeof(double));
+  real_t *x = (real_t*)malloc(SL->n * sizeof(double));
 
   eliminacaoGauss(SL, x, 1);
+  gaussJacobi(SL, x, EPS);
+ // printf("agora tem que ser o mesmo de antes!\n");
+  //prnSistLinear (SL);
 }
 

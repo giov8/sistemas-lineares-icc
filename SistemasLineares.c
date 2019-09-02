@@ -1,9 +1,22 @@
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "utils.h"
 #include "SistemasLineares.h"
+
+#define POS(n, i, j) ((n*i)+j)
+#define N SL->n
+
+SistLinear_t *copiaSL(SistLinear_t *SL_origem){
+  SistLinear_t *SL_dest = alocaSistLinear(SL_origem->n);
+
+  memcpy(SL_dest->A, SL_origem->A, SL_origem->n*SL_origem->n*sizeof(real_t));
+  memcpy(SL_dest->b, SL_origem->b, SL_origem->n*sizeof(real_t));
+
+  return SL_dest;
+}
 
 /*!
   \brief Essa função calcula a norma L2 do resíduo de um sistema linear 
@@ -26,11 +39,63 @@ real_t normaL2Residuo(SistLinear_t *SL, real_t *x)
 
   \return código de erro. 0 em caso de sucesso.
 */
+
+
+/*int posicao(int n, int i, int j) {
+  return n * i + j;
+}*/
+
+/*Função que encontra o MÁXIMO DA COLUNA e devolve a coluna que tem o maior valor*/
+int encontraMax(SistLinear_t *SL, int i) {
+  int LinhaMaior = i; 
+
+  for (int k = i+1; k < SL->n; ++k) {
+    if (fabs(SL->A[POS(SL->n,k,i)]) > fabs(SL->A[POS(SL->n,LinhaMaior,i)]))
+      LinhaMaior = k;
+  }
+  return LinhaMaior;
+}
+
+void trocaLinha(SistLinear_t *SL, int i, int iPivo) {
+  // troca linha i pela linha iPivo
+
+  real_t *aux = (real_t*)malloc (SL->n*sizeof(real_t));
+
+  memcpy(aux, &SL->A[POS(SL->n, i,0)], SL->n*sizeof(real_t)); // Copia a linha i para o vetor auxiliar
+  memcpy(&SL->A[POS(SL->n, i, 0)], &SL->A[POS(SL->n,iPivo, 0)], SL->n*sizeof(real_t)); // Copia a linha iPivo para a linha i
+  memcpy(&SL->A[POS(SL->n, iPivo, 0)], aux, SL->n*sizeof(real_t)); // Copia o vetor auxiliar para a linha iPivo
+
+  real_t aux2 = SL->b[i];
+  SL->b[i] = SL->b[iPivo];
+  SL->b[iPivo] = aux2;
+
+  free(aux);
+}
+
 int eliminacaoGauss (SistLinear_t *SL, real_t *x, int pivotamento)
 {
 
+ SistLinear_t *SLcp = copiaSL(SL);
 
+ for (int i = 0; i < SLcp->n; ++i) {
+    if (pivotamento) {
+      int iPivo = encontraMax(SLcp, i);
+      if ( i != iPivo )
+        trocaLinha(SLcp, i, iPivo);
+    }
+    for(int k=i+1; k < SL->n; ++k) {
+       double m = SLcp->A[POS(SLcp->n,k,i)] / SLcp->A[POS(SLcp->n,i,i)];
+       SLcp->A[POS(SLcp->n,k,i)] = 0.0;
+       for(int j=i+1; j < SLcp->n; ++j)
+          SLcp->A[POS(SLcp->n,k,j)] -= SLcp->A[POS(SLcp->n,i,j)] * m;
+       SLcp->b[k] -= SL->b[i] * m;
+    } 
+ }
+  prnSistLinear(SLcp);
+  liberaSistLinear(SLcp);
+  return 0;
 }
+
 
 /*!
   \brief Método de Gauss-Jacobi
@@ -44,8 +109,34 @@ int eliminacaoGauss (SistLinear_t *SL, real_t *x, int pivotamento)
 */
 int gaussJacobi (SistLinear_t *SL, real_t *x, real_t erro)
 {
+  real_t *xk = (real_t*)malloc(N*sizeof(real_t));
+  real_t soma = 0;
+  real_t norma = 0.0;
+  int i, k = 0;
 
+  for (k = 0; k < MAXIT; ++k) {
+    for (int i = 0; i < N; ++i) {
 
+      for (int j = 0; j < N; j++) if (j != i) soma = soma + SL->A[POS(N, i, j)] * x[j];
+
+      xk[i] = (1/SL->A[POS(N, i, i)]) * (SL->b[i] - soma);
+    }
+  
+    for (i = 0; i < N; i++) {
+      real_t diff = fabs(x[i]-xk[i]);
+      if (norma < diff) norma = diff;
+    }
+
+    if (norma < erro) {
+      memcpy(x,xk,N*sizeof(real_t));
+    }
+  }
+
+  prnVetor(xk, N);
+  free(xk);
+  if (k == MAXIT)
+    return -1; // não houve convergencia!
+  return k; // retorna nmro de iterações 
 }
 
 /*!

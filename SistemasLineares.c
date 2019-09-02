@@ -91,8 +91,19 @@ int eliminacaoGauss (SistLinear_t *SL, real_t *x, int pivotamento)
        SLcp->b[k] -= SL->b[i] * m;
     } 
  }
-  prnSistLinear(SLcp);
-  liberaSistLinear(SLcp);
+ //RETROSUBSTITUIÇÃO
+  real_t soma;
+  int i = N - 1;
+  x[i] = SL->b[i] / SL->A[POS(N,i,i)];
+  for (i = N+2; i >= 0; i--) {
+    soma = SL->b[i];
+    for (int j = i+1; j < N; j++) {
+      soma -= SL->A[POS(N,i,j)];
+    }
+    x[i] = soma/SL->A[POS(N,i,i)];
+  }
+
+   liberaSistLinear(SLcp);
   return 0;
 }
 
@@ -132,7 +143,7 @@ int gaussJacobi (SistLinear_t *SL, real_t *x, real_t erro)
     }
   }
 
-  prnVetor(xk, N);
+  memcpy(x,xk,N*sizeof(real_t));
   free(xk);
   if (k == MAXIT)
     return -1; // não houve convergencia!
@@ -151,8 +162,25 @@ int gaussJacobi (SistLinear_t *SL, real_t *x, real_t erro)
   */
 int gaussSeidel (SistLinear_t *SL, real_t *x, real_t erro)
 {
+  real_t norma = 1.0 + erro; // valor só para entrar no FOR
+  real_t *xk = (real_t*)malloc(N*sizeof(real_t));
+  int k, i, j;
 
-
+  for (k = 0; norma > erro; k++) {
+    for (i = 0; i < N; i++) {
+      real_t soma = 0.0;
+      for (j = 0; j < i; j++) soma += SL->A[POS(N,i,j)] * xk[j];
+      for (j = i+1; j < N; j++) soma += SL->A[POS(N, i, j)] * x[j];
+      xk[i] = (SL->b[i] - soma)/SL->A[POS(N,i,i)];
+    }
+    // calculando norma
+    norma = 0.0;
+    for (i = 0; i < N; i++) {
+      real_t diff = fabs(x[i] - xk[i]);
+      if (norma < diff) norma = diff;
+    }
+    memcpy(x,xk,N*sizeof(real_t));
+  }
 }
 
 

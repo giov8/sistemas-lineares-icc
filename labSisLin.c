@@ -9,36 +9,46 @@ int main ()
 {
 
 
-    // inicializa gerador de nr aleatoreos
-    srand(20192);
-    
-    SistLinear_t *SL = lerSistLinear ();
-    /*alocaSistLinear(5);
-  	inicializaSistLinear (SL, 5, 12);*/
-  	prnSistLinear (SL);
+  // inicializa gerador de nr aleatoreos
+  srand(20192);
+  
+  //lendo sistema 
+  SistLinear_t *SL = lerSistLinear ();
 
-  	real_t *x = (real_t*)malloc(SL->n * sizeof(double));
+  // gerando sistema
+ // SistLinear_t *SL = alocaSistLinear(10);
+	//inicializaSistLinear (SL, 5, 12); // o diagonalmente dominante não está correto
 
- 	eliminacaoGauss(SL, x, 1);
-  	printf("ELIMINACAO GAUSS\n");
-  	prnVetor(x, SL->n);
+  printf("----------------- SISTEMA LINENAR -----------------\n\n");
 
-	for (int i = 0; i < SL->n; i++) {
-  	x[i] = 0;
- 	}
+	prnSistLinear (SL);
 
+  // alocando vetor solução
+	real_t *x = (real_t*)malloc(SL->n * sizeof(double));
+
+  printf("\n\n----------------- ELIMINAÇÃO GAUSS -----------------\n\n");
+  for (int i = 0; i < SL->n; i++) x[i] = 0.0;
+  double tempo = timestamp();
+  eliminacaoGauss(SL, x, 0);
+  printf("\nTempo: %lf\n", timestamp() - tempo);
+  printf("Norma L2: %f\n", normaL2Residuo(SL, x));
+  prnVetor(x, SL->n);
+
+  printf("\n\n----------------- GAUSS - JACOBI -----------------\n\n");  
+	for (int i = 0; i < SL->n; i++) x[i] = 0.0;
+  tempo = timestamp();
 	gaussJacobi(SL, x, EPS);
-	printf("GAUSS JACOBI\n");
-	prnVetor(x, SL->n);
+  printf("\nTempo: %lf\n", timestamp() - tempo);
+  printf("Norma L2: %f\n", normaL2Residuo(SL, x));
+  prnVetor(x, SL->n);
 	
-	for (int i = 0; i < SL->n; i++) {
-  	x[i] = 0;
- 	}
 
+  printf("\n\n----------------- GAUSS - SEIDEL -----------------\n\n");
+	for (int i = 0; i < SL->n; i++) x[i] = 0.0;
+  tempo = timestamp();
 	gaussSeidel(SL, x, EPS);
-	printf("GAUSS SEIDEL\n");
-	prnVetor(x, SL->n);
- // printf("agora tem que ser o mesmo de antes!\n");
-  //prnSistLinear (SL);
+  printf("\nTempo: %lf\n", timestamp() - tempo);
+  printf("Norma L2: %f\n", normaL2Residuo(SL, x));
+  prnVetor(x, SL->n);
 }
 

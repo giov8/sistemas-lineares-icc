@@ -9,6 +9,23 @@
 #define POS(n, i, j) ((n*i)+j)
 #define N SL->n
 
+int diagonalmenteDominante (SistLinear_t *SL) {
+  real_t soma;
+
+  for (int i = 0; i < N; i++) {
+    soma = 0.0;
+    for (int j = 0; j < N; j++) {
+      if (i != j)
+        soma += fabs(SL->A[POS(N,i,j)]);
+    }
+    if (fabs(soma) > fabs(SL->A[POS(N,i,i)])) {
+      return 0; 
+    }
+  }
+
+  return 1;
+}
+
 SistLinear_t *copiaSL(SistLinear_t *SL_origem){
   SistLinear_t *SL_dest = alocaSistLinear(SL_origem->n);
 
@@ -26,12 +43,26 @@ SistLinear_t *copiaSL(SistLinear_t *SL_origem){
 */
 real_t normaL2Residuo(SistLinear_t *SL, real_t *x)
 {
+  real_t norma = 0.0;
+  real_t linha = 0.0;
 
+  for (int i = 0; i < N; i++) {
+
+    linha = 0.0;
+    for (int k = 0; k < N; k++) {
+      linha += SL->A[POS(N,i,k)] * x[k];
+    }
+
+    norma += (SL->b[i] - linha) * (SL->b[i] - linha);
+   // printf("SL->b[i] - x[i] %g\n", SL->b[i] - x[i]);
+  }
+
+  return sqrt(norma);
 }
 
 
 /*!
-  \brief Método da Eliminação de Gauss
+  \brief Método da Eliminação de Gauss-
 
   \param SL Ponteiro para o sistema linear
   \param x ponteiro para o vetor solução
@@ -39,11 +70,6 @@ real_t normaL2Residuo(SistLinear_t *SL, real_t *x)
 
   \return código de erro. 0 em caso de sucesso.
 */
-
-
-/*int posicao(int n, int i, int j) {
-  return n * i + j;
-}*/
 
 /*Função que encontra o MÁXIMO DA COLUNA e devolve a coluna que tem o maior valor*/
 int encontraMax(SistLinear_t *SL, int i) {
@@ -84,23 +110,25 @@ int eliminacaoGauss (SistLinear_t *SL, real_t *x, int pivotamento)
         trocaLinha(SLcp, i, iPivo);
     }
     for(int k=i+1; k < SL->n; ++k) {
-       double m = SLcp->A[POS(SLcp->n,k,i)] / SLcp->A[POS(SLcp->n,i,i)];
+       real_t m = SLcp->A[POS(SLcp->n,k,i)] / SLcp->A[POS(SLcp->n,i,i)];
        SLcp->A[POS(SLcp->n,k,i)] = 0.0;
        for(int j=i+1; j < SLcp->n; ++j)
           SLcp->A[POS(SLcp->n,k,j)] -= SLcp->A[POS(SLcp->n,i,j)] * m;
-       SLcp->b[k] -= SL->b[i] * m;
+       SLcp->b[k] -= SLcp->b[i] * m;
     } 
  }
+// prnSistLinear(SLcp);
  //RETROSUBSTITUIÇÃO
-  real_t soma;
+  real_t soma = 0.0;
   int i = N - 1;
-  x[i] = SL->b[i] / SL->A[POS(N,i,i)];
+
+  x[i] = SLcp->b[i] / SLcp->A[POS(N,i,i)]; //printf("SL bi %g       a i i %g\n",SL->b[i] ,SL->A[POS(N,i,i)]);
   for (i = N+2; i >= 0; i--) {
-    soma = SL->b[i];
+    soma = SLcp->b[i];
     for (int j = i+1; j < N; j++) {
-      soma -= SL->A[POS(N,i,j)];
+      soma -= SLcp->A[POS(N,i,j)] * x[j]; //printf("SL A %g       x[j] %g\n",SL->A[POS(N,i,j)],x[j]);
     }
-    x[i] = soma/SL->A[POS(N,i,i)];
+    x[i] = soma/SLcp->A[POS(N,i,i)];
   }
 
    liberaSistLinear(SLcp);
@@ -120,34 +148,43 @@ int eliminacaoGauss (SistLinear_t *SL, real_t *x, int pivotamento)
 */
 int gaussJacobi (SistLinear_t *SL, real_t *x, real_t erro)
 {
+ if (!diagonalmenteDominante(SL)) {
+    fprintf(stderr, "A matriz não é diagonalmente dominante\n");
+    return -2; // not dominante
+  }
+
   real_t *xk = (real_t*)malloc(N*sizeof(real_t));
   real_t soma = 0;
   real_t norma = 0.0;
   int i, k = 0;
 
-  for (k = 0; k < MAXIT; ++k) {
-    for (int i = 0; i < N; ++i) {
-
-      for (int j = 0; j < N; j++) if (j != i) soma = soma + SL->A[POS(N, i, j)] * x[j];
-
+  for (k = 0; k < MAXIT; k++) {
+    norma = 0.0;
+    for (int i = 0; i < N; i++) {
+      //somatório
+      soma = 0.0;
+      for (int j = 0; j < N; j++)
+        if (j != i)
+          soma += SL->A[POS(N, i, j)] * x[j];
       xk[i] = (1/SL->A[POS(N, i, i)]) * (SL->b[i] - soma);
     }
-  
+    
     for (i = 0; i < N; i++) {
-      real_t diff = fabs(x[i]-xk[i]);
-      if (norma < diff) norma = diff;
+      if (norma < fabs(x[i]-xk[i]))
+        norma = fabs(x[i]-xk[i]);
     }
 
+    memcpy(x,xk,N*sizeof(real_t));
     if (norma < erro) {
-      memcpy(x,xk,N*sizeof(real_t));
+      free(xk);
+      return k;
     }
+    //  memcpy(x,xk,N*sizeof(real_t));
   }
 
-  memcpy(x,xk,N*sizeof(real_t));
   free(xk);
-  if (k == MAXIT)
-    return -1; // não houve convergencia!
-  return k; // retorna nmro de iterações 
+  fprintf(stderr, "Não houve convergência\n");
+  return -1; // não houve convergencia!
 }
 
 /*!
@@ -162,6 +199,10 @@ int gaussJacobi (SistLinear_t *SL, real_t *x, real_t erro)
   */
 int gaussSeidel (SistLinear_t *SL, real_t *x, real_t erro)
 {
+  if (!diagonalmenteDominante(SL)) {
+    fprintf(stderr, "A matriz não é diagonalmente dominante\n");
+    return -2; // not dominante
+  }
   real_t norma = 1.0 + erro; // valor só para entrar no FOR
   real_t *xk = (real_t*)malloc(N*sizeof(real_t));
   int k, i, j;
